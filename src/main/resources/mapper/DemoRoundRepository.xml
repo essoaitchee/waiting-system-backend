@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.waitingsystem.repository.DemoRoundRepository">
+
+	<resultMap id="DemoClickRecordResultMap" type="com.example.waitingsystem.domain.DemoClickRecord">
+		<id property="demoClickRecordId" column="demo_click_record_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="couponId" column="coupon_id"/>
+		<result property="couponName" column="coupon_name"/>
+		<result property="reactionTimeMs" column="reaction_time_ms"/>
+		<result property="clickedAt" column="clicked_at"/>
+		<result property="roundStartedAt" column="round_started_at"/>
+		<result property="createdAt" column="created_at"/>
+	</resultMap>
+
+	<select id="findRoundClickByUserId" resultMap="DemoClickRecordResultMap">
+		SELECT demo_click_record_id,
+		       user_id,
+		       coupon_id,
+		       coupon_name,
+		       reaction_time_ms,
+		       clicked_at,
+		       round_started_at,
+		       created_at
+		FROM demo_click_record
+		WHERE user_id = #{userId}
+		  AND round_started_at = #{roundStartedAt, jdbcType=TIMESTAMP}
+	</select>
+
+	<insert id="insertClickRecord" parameterType="com.example.waitingsystem.domain.DemoClickRecord">
+		<selectKey keyProperty="demoClickRecordId" resultType="long" order="BEFORE">
+			SELECT seq_demo_click_record.NEXTVAL FROM dual
+		</selectKey>
+		INSERT INTO demo_click_record (
+			demo_click_record_id,
+			user_id,
+			coupon_id,
+			coupon_name,
+			reaction_time_ms,
+			clicked_at,
+			round_started_at,
+			created_at
+		) VALUES (
+			#{demoClickRecordId},
+			#{userId},
+			#{couponId},
+			#{couponName},
+			#{reactionTimeMs},
+			#{clickedAt, jdbcType=TIMESTAMP},
+			#{roundStartedAt, jdbcType=TIMESTAMP},
+			#{createdAt, jdbcType=TIMESTAMP}
+		)
+	</insert>
+
+	<select id="findLatestClickRecordByUserId" resultMap="DemoClickRecordResultMap">
+		SELECT demo_click_record_id,
+		       user_id,
+		       coupon_id,
+		       coupon_name,
+		       reaction_time_ms,
+		       clicked_at,
+		       round_started_at,
+		       created_at
+		FROM demo_click_record
+		WHERE user_id = #{userId}
+		ORDER BY clicked_at DESC, demo_click_record_id DESC
+		FETCH FIRST 1 ROWS ONLY
+	</select>
+
+	<select id="findBestClickRecordByUserId" resultMap="DemoClickRecordResultMap">
+		SELECT demo_click_record_id,
+		       user_id,
+		       coupon_id,
+		       coupon_name,
+		       reaction_time_ms,
+		       clicked_at,
+		       round_started_at,
+		       created_at
+		FROM demo_click_record
+		WHERE user_id = #{userId}
+		ORDER BY reaction_time_ms ASC, clicked_at ASC, demo_click_record_id ASC
+		FETCH FIRST 1 ROWS ONLY
+	</select>
+
+	<select id="findTopClickRecords" resultMap="DemoClickRecordResultMap">
+		SELECT demo_click_record_id,
+		       user_id,
+		       coupon_id,
+		       coupon_name,
+		       reaction_time_ms,
+		       clicked_at,
+		       round_started_at,
+		       created_at
+		FROM demo_click_record
+		ORDER BY reaction_time_ms ASC, clicked_at ASC, demo_click_record_id ASC
+		FETCH FIRST #{limit} ROWS ONLY
+	</select>
+</mapper>

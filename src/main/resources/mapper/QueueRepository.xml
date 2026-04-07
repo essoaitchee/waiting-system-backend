@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.waitingsystem.repository.QueueRepository">
+
+	<resultMap id="QueueEventResultMap" type="com.example.waitingsystem.domain.QueueEvent">
+		<id property="eventId" column="event_id"/>
+		<result property="eventName" column="event_name"/>
+		<result property="capacityPerSecond" column="capacity_per_second"/>
+		<result property="admissionWindowSeconds" column="admission_window_seconds"/>
+		<result property="eventStatus" column="event_status"/>
+		<result property="activeYn" column="active_yn"/>
+		<result property="startsAt" column="starts_at"/>
+		<result property="endsAt" column="ends_at"/>
+		<result property="createdAt" column="created_at"/>
+		<result property="updatedAt" column="updated_at"/>
+	</resultMap>
+
+	<resultMap id="QueueEntryResultMap" type="com.example.waitingsystem.domain.QueueEntry">
+		<id property="queueEntryId" column="queue_entry_id"/>
+		<result property="eventId" column="event_id"/>
+		<result property="userId" column="user_id"/>
+		<result property="queueToken" column="queue_token"/>
+		<result property="queueSequence" column="queue_sequence"/>
+		<result property="status" column="status"/>
+		<result property="enteredAt" column="entered_at"/>
+		<result property="admissionToken" column="admission_token"/>
+		<result property="admittedAt" column="admitted_at"/>
+		<result property="admissionExpiresAt" column="admission_expires_at"/>
+		<result property="createdAt" column="created_at"/>
+		<result property="updatedAt" column="updated_at"/>
+	</resultMap>
+
+	<select id="findActiveEventById" parameterType="long" resultMap="QueueEventResultMap">
+		SELECT event_id,
+		       event_name,
+		       capacity_per_second,
+		       admission_window_seconds,
+		       event_status,
+		       active_yn,
+		       starts_at,
+		       ends_at,
+		       created_at,
+		       updated_at
+		FROM queue_event
+		WHERE event_id = #{eventId}
+		  AND active_yn = 'Y'
+		  AND event_status = 'OPEN'
+		  AND (starts_at IS NULL OR starts_at &lt;= SYSTIMESTAMP)
+		  AND (ends_at IS NULL OR ends_at &gt;= SYSTIMESTAMP)
+	</select>
+
+	<select id="findEventById" parameterType="long" resultMap="QueueEventResultMap">
+		SELECT event_id,
+		       event_name,
+		       capacity_per_second,
+		       admission_window_seconds,
+		       event_status,
+		       active_yn,
+		       starts_at,
+		       ends_at,
+		       created_at,
+		       updated_at
+		FROM queue_event
+		WHERE event_id = #{eventId}
+	</select>
+
+	<select id="findActiveEvents" resultMap="QueueEventResultMap">
+		SELECT event_id,
+		       event_name,
+		       capacity_per_second,
+		       admission_window_seconds,
+		       event_status,
+		       active_yn,
+		       starts_at,
+		       ends_at,
+		       created_at,
+		       updated_at
+		FROM queue_event
+		WHERE active_yn = 'Y'
+		  AND event_status = 'OPEN'
+		  AND (starts_at IS NULL OR starts_at &lt;= SYSTIMESTAMP)
+		  AND (ends_at IS NULL OR ends_at &gt;= SYSTIMESTAMP)
+		ORDER BY event_id
+	</select>
+
+	<update id="upsertDemoEvent" parameterType="com.example.waitingsystem.domain.QueueEvent">
+		MERGE INTO queue_event target
+		USING (
+			SELECT #{eventId} AS event_id FROM dual
+		) source
+		ON (target.event_id = source.event_id)
+		WHEN MATCHED THEN UPDATE SET
+			target.event_name = #{eventName},
+			target.capacity_per_second = #{capacityPerSecond},
+			target.admission_window_seconds = #{admissionWindowSeconds},
+			target.event_status = #{eventStatus},
+			target.active_yn = #{activeYn},
+			target.starts_at = #{startsAt, jdbcType=TIMESTAMP},
+			target.ends_at = #{endsAt, jdbcType=TIMESTAMP},
+			target.updated_at = #{updatedAt, jdbcType=TIMESTAMP}
+		WHEN NOT MATCHED THEN
+			INSERT (
+				event_id,
+				event_name,
+				capacity_per_second,
+				admission_window_seconds,
+				event_status,
+				active_yn,
+				starts_at,
+				ends_at,
+				created_at,
+				updated_at
+			) VALUES (
+				#{eventId},
+				#{eventName},
+				#{capacityPerSecond},
+				#{admissionWindowSeconds},
+				#{eventStatus},
+				#{activeYn},
+				#{startsAt, jdbcType=TIMESTAMP},
+				#{endsAt, jdbcType=TIMESTAMP},
+				#{createdAt, jdbcType=TIMESTAMP},
+				#{updatedAt, jdbcType=TIMESTAMP}
+			)
+	</update>
+
+	<select id="findEntryByEventIdAndUserId" resultMap="QueueEntryResultMap">
+		SELECT queue_entry_id,
+		       event_id,
+		       user_id,
+		       queue_token,
+		       queue_sequence,
+		       status,
+		       entered_at,
+		       admission_token,
+		       admitted_at,
+		       admission_expires_at,
+		       created_at,
+		       updated_at
+		FROM queue_entry
+		WHERE event_id = #{eventId}
+		  AND user_id = #{userId}
+	</select>
+
+	<select id="findEntryByAdmissionToken" resultMap="QueueEntryResultMap">
+		SELECT queue_entry_id,
+		       event_id,
+		       user_id,
+		       queue_token,
+		       queue_sequence,
+		       status,
+		       entered_at,
+		       admission_token,
+		       admitted_at,
+		       admission_expires_at,
+		       created_at,
+		       updated_at
+		FROM queue_entry
+		WHERE event_id = #{eventId}
+		  AND admission_token = #{admissionToken}
+	</select>
+
+	<insert id="insertQueueEntry" parameterType="com.example.waitingsystem.domain.QueueEntry">
+		<selectKey keyProperty="queueEntryId" resultType="long" order="BEFORE">
+			SELECT seq_queue_entry.NEXTVAL FROM dual
+		</selectKey>
+		INSERT INTO queue_entry (
+			queue_entry_id,
+			event_id,
+			user_id,
+			queue_token,
+			queue_sequence,
+			status,
+			entered_at,
+			admission_token,
+			admitted_at,
+			admission_expires_at,
+			created_at,
+			updated_at
+		) VALUES (
+			#{queueEntryId},
+			#{eventId},
+			#{userId},
+			#{queueToken},
+			#{queueSequence},
+			#{status},
+			#{enteredAt, jdbcType=TIMESTAMP},
+			#{admissionToken, jdbcType=VARCHAR},
+			#{admittedAt, jdbcType=TIMESTAMP},
+			#{admissionExpiresAt, jdbcType=TIMESTAMP},
+			#{createdAt, jdbcType=TIMESTAMP},
+        #{updatedAt, jdbcType=TIMESTAMP}
+		)
+	</insert>
+
+	<update id="updateEntryAsAdmitted">
+		UPDATE queue_entry
+		SET status = 'ADMITTED',
+		    admission_token = #{admissionToken},
+		    admitted_at = #{admittedAt},
+		    admission_expires_at = #{admissionExpiresAt},
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND user_id = #{userId}
+		  AND status = 'WAITING'
+	</update>
+
+	<update id="updateEntryAsEntered">
+		UPDATE queue_entry
+		SET status = 'ENTERED',
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND admission_token = #{admissionToken}
+		  AND status = 'ADMITTED'
+	</update>
+
+	<update id="updateEntryAsExpired">
+		UPDATE queue_entry
+		SET status = 'EXPIRED',
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND user_id = #{userId}
+		  AND status = 'ADMITTED'
+	</update>
+
+	<update id="updateEntryForRejoin">
+		UPDATE queue_entry
+		SET queue_token = #{queueToken},
+		    queue_sequence = #{queueSequence},
+		    status = 'WAITING',
+		    entered_at = #{enteredAt},
+		    admission_token = NULL,
+		    admitted_at = NULL,
+		    admission_expires_at = NULL,
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND user_id = #{userId}
+		  AND status IN ('EXPIRED', 'ENTERED')
+	</update>
+
+	<update id="resetEntryForDemo">
+		UPDATE queue_entry
+		SET status = 'EXPIRED',
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND user_id = #{userId}
+		  AND status IN ('WAITING', 'ADMITTED', 'ENTERED')
+	</update>
+
+	<update id="resetEntriesForDemoByUserPrefix">
+		UPDATE queue_entry
+		SET status = 'EXPIRED',
+		    updated_at = #{updatedAt}
+		WHERE event_id = #{eventId}
+		  AND user_id LIKE #{userIdPrefix}
+		  AND status IN ('WAITING', 'ADMITTED', 'ENTERED')
+	</update>
+</mapper>

@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: waitingsystem
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    url: jdbc:oracle:thin:@localhost:1521/XE
+    username: C##LG_DB
+    password: 12345
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 3000
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2s
+  cache:
+    type: redis
+
+server:
+  port: 8081
+  tomcat:
+    threads:
+      max: 400
+      min-spare: 20
+    accept-count: 1000
+
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.example.waitingsystem.domain
+  configuration:
+    map-underscore-to-camel-case: true
+    default-statement-timeout: 3
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+logging:
+  level:
+    com.example.waitingsystem.repository: DEBUG
+    org.mybatis: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,caches
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+app:
+  queue:
+    default-admission-batch-size: 100
+    default-admission-window-seconds: 600
+    scheduler:
+      enabled: true
+      fixed-delay-ms: 1000
+  demo:
+    default-event-id: 1001
+    default-coupon-id: 1
+    traffic-simulation-enabled: true
+    traffic-burst-size: 120
+    admission-batch-size: 12
+    admission-window-seconds: 180
+    min-users-before-current: 60
+    max-users-before-current: 100
+    round-interval-seconds: 60
+    open-window-seconds: 10
+    fake-user-prefix: crowd-user
+  cache:
+    warm-up:
+      enabled: true
+      target-count: 10000
+      page-size: 100
+      max-pages-per-category: 100

@@ -47,8 +47,8 @@
 		WHERE event_id = #{eventId}
 		  AND active_yn = 'Y'
 		  AND event_status = 'OPEN'
-		  AND (starts_at IS NULL OR starts_at &lt;= SYSTIMESTAMP)
-		  AND (ends_at IS NULL OR ends_at &gt;= SYSTIMESTAMP)
+		  AND (starts_at IS NULL OR starts_at &lt;= CURRENT_TIMESTAMP(6))
+		  AND (ends_at IS NULL OR ends_at &gt;= CURRENT_TIMESTAMP(6))
 	</select>
 
 	<select id="findEventById" parameterType="long" resultMap="QueueEventResultMap">
@@ -80,51 +80,45 @@
 		FROM queue_event
 		WHERE active_yn = 'Y'
 		  AND event_status = 'OPEN'
-		  AND (starts_at IS NULL OR starts_at &lt;= SYSTIMESTAMP)
-		  AND (ends_at IS NULL OR ends_at &gt;= SYSTIMESTAMP)
+		  AND (starts_at IS NULL OR starts_at &lt;= CURRENT_TIMESTAMP(6))
+		  AND (ends_at IS NULL OR ends_at &gt;= CURRENT_TIMESTAMP(6))
 		ORDER BY event_id
 	</select>
 
-	<update id="upsertDemoEvent" parameterType="com.example.waitingsystem.domain.QueueEvent">
-		MERGE INTO queue_event target
-		USING (
-			SELECT #{eventId} AS event_id FROM dual
-		) source
-		ON (target.event_id = source.event_id)
-		WHEN MATCHED THEN UPDATE SET
-			target.event_name = #{eventName},
-			target.capacity_per_second = #{capacityPerSecond},
-			target.admission_window_seconds = #{admissionWindowSeconds},
-			target.event_status = #{eventStatus},
-			target.active_yn = #{activeYn},
-			target.starts_at = #{startsAt, jdbcType=TIMESTAMP},
-			target.ends_at = #{endsAt, jdbcType=TIMESTAMP},
-			target.updated_at = #{updatedAt, jdbcType=TIMESTAMP}
-		WHEN NOT MATCHED THEN
-			INSERT (
-				event_id,
-				event_name,
-				capacity_per_second,
-				admission_window_seconds,
-				event_status,
-				active_yn,
-				starts_at,
-				ends_at,
-				created_at,
-				updated_at
-			) VALUES (
-				#{eventId},
-				#{eventName},
-				#{capacityPerSecond},
-				#{admissionWindowSeconds},
-				#{eventStatus},
-				#{activeYn},
-				#{startsAt, jdbcType=TIMESTAMP},
-				#{endsAt, jdbcType=TIMESTAMP},
-				#{createdAt, jdbcType=TIMESTAMP},
-				#{updatedAt, jdbcType=TIMESTAMP}
-			)
-	</update>
+	<insert id="upsertDemoEvent" parameterType="com.example.waitingsystem.domain.QueueEvent">
+		INSERT INTO queue_event (
+			event_id,
+			event_name,
+			capacity_per_second,
+			admission_window_seconds,
+			event_status,
+			active_yn,
+			starts_at,
+			ends_at,
+			created_at,
+			updated_at
+		) VALUES (
+			#{eventId},
+			#{eventName},
+			#{capacityPerSecond},
+			#{admissionWindowSeconds},
+			#{eventStatus},
+			#{activeYn},
+			#{startsAt, jdbcType=TIMESTAMP},
+			#{endsAt, jdbcType=TIMESTAMP},
+			#{createdAt, jdbcType=TIMESTAMP},
+			#{updatedAt, jdbcType=TIMESTAMP}
+		)
+		ON DUPLICATE KEY UPDATE
+			event_name = VALUES(event_name),
+			capacity_per_second = VALUES(capacity_per_second),
+			admission_window_seconds = VALUES(admission_window_seconds),
+			event_status = VALUES(event_status),
+			active_yn = VALUES(active_yn),
+			starts_at = VALUES(starts_at),
+			ends_at = VALUES(ends_at),
+			updated_at = VALUES(updated_at)
+	</insert>
 
 	<select id="findEntryByEventIdAndUserId" resultMap="QueueEntryResultMap">
 		SELECT queue_entry_id,
@@ -162,12 +156,8 @@
 		  AND admission_token = #{admissionToken}
 	</select>
 
-	<insert id="insertQueueEntry" parameterType="com.example.waitingsystem.domain.QueueEntry">
-		<selectKey keyProperty="queueEntryId" resultType="long" order="BEFORE">
-			SELECT seq_queue_entry.NEXTVAL FROM dual
-		</selectKey>
+	<insert id="insertQueueEntry" parameterType="com.example.waitingsystem.domain.QueueEntry" useGeneratedKeys="true" keyProperty="queueEntryId">
 		INSERT INTO queue_entry (
-			queue_entry_id,
 			event_id,
 			user_id,
 			queue_token,
@@ -180,7 +170,6 @@
 			created_at,
 			updated_at
 		) VALUES (
-			#{queueEntryId},
 			#{eventId},
 			#{userId},
 			#{queueToken},

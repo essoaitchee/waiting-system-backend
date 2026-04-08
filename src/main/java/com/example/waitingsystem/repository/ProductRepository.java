@@ -9,8 +9,8 @@ public interface ProductRepository {
 
 	List<Product> findProducts(
 		@Param("categoryId") Long categoryId,
-		@Param("startRow") int startRow,
-		@Param("endRow") int endRow
+		@Param("offset") int offset,
+		@Param("size") int size
 	);
 
 	List<Long> findActiveCategoryIds();

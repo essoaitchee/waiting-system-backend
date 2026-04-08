@@ -29,12 +29,8 @@
 		  AND round_started_at = #{roundStartedAt, jdbcType=TIMESTAMP}
 	</select>
 
-	<insert id="insertClickRecord" parameterType="com.example.waitingsystem.domain.DemoClickRecord">
-		<selectKey keyProperty="demoClickRecordId" resultType="long" order="BEFORE">
-			SELECT seq_demo_click_record.NEXTVAL FROM dual
-		</selectKey>
+	<insert id="insertClickRecord" parameterType="com.example.waitingsystem.domain.DemoClickRecord" useGeneratedKeys="true" keyProperty="demoClickRecordId">
 		INSERT INTO demo_click_record (
-			demo_click_record_id,
 			user_id,
 			coupon_id,
 			coupon_name,
@@ -43,7 +39,6 @@
 			round_started_at,
 			created_at
 		) VALUES (
-			#{demoClickRecordId},
 			#{userId},
 			#{couponId},
 			#{couponName},
@@ -66,7 +61,7 @@
 		FROM demo_click_record
 		WHERE user_id = #{userId}
 		ORDER BY clicked_at DESC, demo_click_record_id DESC
-		FETCH FIRST 1 ROWS ONLY
+		LIMIT 1
 	</select>
 
 	<select id="findBestClickRecordByUserId" resultMap="DemoClickRecordResultMap">
@@ -81,7 +76,7 @@
 		FROM demo_click_record
 		WHERE user_id = #{userId}
 		ORDER BY reaction_time_ms ASC, clicked_at ASC, demo_click_record_id ASC
-		FETCH FIRST 1 ROWS ONLY
+		LIMIT 1
 	</select>
 
 	<select id="findTopClickRecords" resultMap="DemoClickRecordResultMap">
@@ -95,6 +90,6 @@
 		       created_at
 		FROM demo_click_record
 		ORDER BY reaction_time_ms ASC, clicked_at ASC, demo_click_record_id ASC
-		FETCH FIRST #{limit} ROWS ONLY
+		LIMIT #{limit}
 	</select>
 </mapper>

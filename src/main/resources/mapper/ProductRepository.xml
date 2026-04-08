@@ -24,24 +24,13 @@
 		       status,
 		       created_at,
 		       updated_at
-		FROM (
-			SELECT p.product_id,
-			       p.category_id,
-			       p.product_name,
-			       p.price,
-			       p.stock_count,
-			       p.status,
-			       p.created_at,
-			       p.updated_at,
-			       ROW_NUMBER() OVER (ORDER BY p.product_id DESC) AS rn
-			FROM product p
-			WHERE p.status = 'ACTIVE'
-			<if test="categoryId != null">
-				AND p.category_id = #{categoryId}
-			</if>
-		)
-		WHERE rn BETWEEN #{startRow} AND #{endRow}
-		ORDER BY rn
+		FROM product
+		WHERE status = 'ACTIVE'
+		<if test="categoryId != null">
+			AND category_id = #{categoryId}
+		</if>
+		ORDER BY product_id DESC
+		LIMIT #{size} OFFSET #{offset}
 	</select>
 
 	<select id="findActiveCategoryIds" resultType="long">

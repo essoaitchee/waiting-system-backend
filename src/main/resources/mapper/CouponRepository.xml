@@ -74,7 +74,7 @@
 	<update id="decreaseStockIfAvailable">
 		UPDATE coupon_stock
 		SET remain_count = remain_count - 1,
-		    updated_at = SYSTIMESTAMP
+		    updated_at = CURRENT_TIMESTAMP(6)
 		WHERE coupon_id = #{couponId}
 		  AND status = 'ACTIVE'
 		  AND remain_count &gt; 0
@@ -86,21 +86,16 @@
 			WHEN remain_count &lt; total_count THEN remain_count + 1
 			ELSE total_count
 		END,
-		    updated_at = SYSTIMESTAMP
+		    updated_at = CURRENT_TIMESTAMP(6)
 		WHERE coupon_id = #{couponId}
 	</update>
 
-	<insert id="insertCouponIssue" parameterType="com.example.waitingsystem.domain.CouponIssue">
-		<selectKey keyProperty="couponIssueId" resultType="long" order="BEFORE">
-			SELECT seq_coupon_issue.NEXTVAL FROM dual
-		</selectKey>
+	<insert id="insertCouponIssue" parameterType="com.example.waitingsystem.domain.CouponIssue" useGeneratedKeys="true" keyProperty="couponIssueId">
 		INSERT INTO coupon_issue (
-			coupon_issue_id,
 			coupon_id,
 			user_id,
 			issued_at
 		) VALUES (
-			#{couponIssueId},
 			#{couponId},
 			#{userId},
 			#{issuedAt}

@@ -20,10 +20,9 @@ public class ProductService {
 	public List<ProductResponse> getProducts(Long categoryId, int page, int size) {
 		int safePage = Math.max(page, 0);
 		int safeSize = Math.max(size, 1);
-		int startRow = safePage * safeSize + 1;
-		int endRow = startRow + safeSize - 1;
+		int offset = safePage * safeSize;
 
-		return productRepository.findProducts(categoryId, startRow, endRow)
+		return productRepository.findProducts(categoryId, offset, safeSize)
 			.stream()
 			.map(product -> new ProductResponse(
 				product.getProductId(),

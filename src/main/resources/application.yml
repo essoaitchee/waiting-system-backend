@@ -5,10 +5,10 @@ spring:
     virtual:
       enabled: true
   datasource:
-    driver-class-name: oracle.jdbc.OracleDriver
-    url: jdbc:oracle:thin:@localhost:1521/XE
-    username: C##LG_DB
-    password: 12345
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://52.79.82.54:3306/waiting_system?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: waiting_user
+    password: qwert12345!
     hikari:
       maximum-pool-size: 30
       minimum-idle: 10
@@ -63,7 +63,7 @@ app:
       fixed-delay-ms: 1000
   demo:
     default-event-id: 1001
-    default-coupon-id: 1
+    default-coupon-id: 201
     traffic-simulation-enabled: true
     traffic-burst-size: 120
     admission-batch-size: 12

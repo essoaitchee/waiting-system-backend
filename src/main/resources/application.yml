@@ -55,6 +55,11 @@ management:
       application: ${spring.application.name}
 
 app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - https://waiting-system-frontend.pages.dev
+      - https://waiting.shwork.site
   queue:
     default-admission-batch-size: 100
     default-admission-window-seconds: 600
